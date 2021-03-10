@@ -15,20 +15,14 @@ typedef void OnTap(Flushbar flushbar);
 class Flushbar<T> extends StatefulWidget {
   Flushbar(
       {Key? key,
-      String? title,
-      Color? titleColor,
-      double? titleSize,
-      String? message,
-      double? messageSize,
-      Color? messageColor,
-      Widget? titleText,
-      Widget? messageText,
-      Widget? icon,
+        String? title,
+      Text? titleText,
+      Icon? icon,
       bool shouldIconPulse = true,
       double? maxWidth,
       EdgeInsets margin = const EdgeInsets.all(0.0),
       EdgeInsets padding = const EdgeInsets.all(16),
-      BorderRadius? borderRadius,
+      double borderRadius = 0.0,
       Color? borderColor,
       double borderWidth = 1.0,
       Color backgroundColor = const Color(0xFF303030),
@@ -56,15 +50,10 @@ class Flushbar<T> extends StatefulWidget {
       bool blockBackgroundInteraction = false,
       double? routeBlur,
       Color? routeColor,
-      Form? userInputForm})
-      : this.title = title,
-        this.titleSize = titleSize,
-        this.titleColor = titleColor,
-        this.message = message,
-        this.messageSize = messageSize,
-        this.messageColor = messageColor,
+     })
+      :
+        this.title = title,
         this.titleText = titleText,
-        this.messageText = messageText,
         this.icon = icon,
         this.shouldIconPulse = shouldIconPulse,
         this.maxWidth = maxWidth,
@@ -97,7 +86,6 @@ class Flushbar<T> extends StatefulWidget {
         this.blockBackgroundInteraction = blockBackgroundInteraction,
         this.routeBlur = routeBlur,
         this.routeColor = routeColor,
-        this.userInputForm = userInputForm,
         super(key: key) {
     this.onStatusChanged = onStatusChanged ?? (status) {};
   }
@@ -108,26 +96,8 @@ class Flushbar<T> extends StatefulWidget {
   /// The title displayed to the user
   final String? title;
 
-  /// The title text size displayed to the user
-  final double? titleSize;
-
-  /// Color title displayed to the user ? default is black
-  final Color? titleColor;
-
-  /// The message displayed to the user.
-  final String? message;
-
-  /// The message text size displayed to the user.
-  final double? messageSize;
-
-  /// Color message displayed to the user ? default is black
-  final Color? messageColor;
-
   /// Replaces [title]. Although this accepts a [Widget], it is meant to receive [Text] or [RichText]
-  final Widget? titleText;
-
-  /// Replaces [message]. Although this accepts a [Widget], it is meant to receive [Text] or  [RichText]
-  final Widget? messageText;
+  final Text? titleText;
 
   /// Will be ignored if [backgroundGradient] is not null
   final Color backgroundColor;
@@ -146,7 +116,7 @@ class Flushbar<T> extends StatefulWidget {
 
   /// You can use any widget here, but I recommend [Icon] or [Image] as indication of what kind
   /// of message you are displaying. Other widgets may break the layout
-  final Widget? icon;
+  final Icon? icon;
 
   /// An option to animate the icon (if present). Defaults to true.
   final bool shouldIconPulse;
@@ -189,10 +159,11 @@ class Flushbar<T> extends StatefulWidget {
   /// The default follows material design guide line
   final EdgeInsets padding;
 
-  /// Adds a radius to corners specified of Flushbar. Best combined with [margin].
+  /// Adds a radius to all corners of Flushbar. Best combined with [margin].
   /// I do not recommend using it with [showProgressIndicator] or [leftBarIndicatorColor].
-  final BorderRadius? borderRadius;
-  // Adds a border to every side of Flushbar
+  final double borderRadius;
+
+  /// Adds a border to every side of Flushbar
   /// I do not recommend using it with [showProgressIndicator] or [leftBarIndicatorColor].
   final Color? borderColor;
 
@@ -242,9 +213,6 @@ class Flushbar<T> extends StatefulWidget {
   /// Make sure you use a color with transparency here e.g. Colors.grey[600].withOpacity(0.2).
   /// It does not take effect if [blockBackgroundInteraction] is false
   final Color? routeColor;
-
-  /// A [TextFormField] in case you want a simple user input. Every other widget is ignored if this is not null.
-  final Form? userInputForm;
 
   late final route.FlushbarRoute<T?>? _flushbarRoute;
 
@@ -320,13 +288,7 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
     _backgroundBoxKey = GlobalKey();
     _boxHeightCompleter = Completer<Size>();
 
-    assert(
-        widget.userInputForm != null ||
-            ((widget.message != null && widget.message!.isNotEmpty) ||
-                widget.messageText != null),
-        "A message is mandatory if you are not using userInputForm. Set either a message or messageText");
-
-    _isTitlePresent = (widget.title != null || widget.titleText != null);
+    _isTitlePresent = true;
     _messageTopMargin = _isTitlePresent ? 6.0 : widget.padding.top;
 
     _configureLeftBarFuture();
@@ -424,13 +386,7 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
   }
 
   Widget _getFlushbar() {
-    Widget flushbar;
-
-    if (widget.userInputForm != null) {
-      flushbar = _generateInputFlushbar();
-    } else {
-      flushbar = _generateFlushbar();
-    }
+    Widget flushbar = _generateFlushbar();
 
     return Stack(
       children: [
@@ -438,21 +394,19 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
           future: _boxHeightCompleter.future,
           builder: (context, AsyncSnapshot<Size> snapshot) {
             if (snapshot.hasData) {
-              if (widget.barBlur == 0) {
-                //fixes https://github.com/cmdrootaccess/another-flushbar/issues/8
+              if(widget.barBlur == 0){ //fixes https://github.com/cmdrootaccess/another-flushbar/issues/8
                 return _emptyWidget;
               }
               return ClipRRect(
-                borderRadius: widget.borderRadius,
+                borderRadius: BorderRadius.circular(widget.borderRadius),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                      sigmaX: widget.barBlur, sigmaY: widget.barBlur),
+                  filter: ImageFilter.blur(sigmaX: widget.barBlur, sigmaY: widget.barBlur),
                   child: Container(
                     height: snapshot.data!.height,
                     width: snapshot.data!.width,
                     decoration: BoxDecoration(
                       color: Colors.transparent,
-                      borderRadius: widget.borderRadius,
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
                     ),
                   ),
                 ),
@@ -476,7 +430,7 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
         color: widget.backgroundColor,
         gradient: widget.backgroundGradient,
         boxShadow: widget.boxShadows,
-        borderRadius: widget.borderRadius,
+        borderRadius: BorderRadius.circular(widget.borderRadius),
         border: widget.borderColor != null
             ? Border.all(color: widget.borderColor!, width: widget.borderWidth)
             : null,
@@ -484,11 +438,7 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
       child: Padding(
         padding: const EdgeInsets.only(
             left: 8.0, right: 8.0, bottom: 8.0, top: 16.0),
-        child: FocusScope(
-          child: widget.userInputForm!,
-          node: _focusNode,
-          autofocus: true,
-        ),
+        child: SizedBox()
       ),
     );
   }
@@ -503,7 +453,7 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
         color: widget.backgroundColor,
         gradient: widget.backgroundGradient,
         boxShadow: widget.boxShadows,
-        borderRadius: widget.borderRadius,
+        borderRadius: BorderRadius.circular(widget.borderRadius),
         border: widget.borderColor != null
             ? Border.all(color: widget.borderColor!, width: widget.borderWidth)
             : null,
@@ -563,28 +513,31 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
         Expanded(
           flex: 1,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              (_isTitlePresent)
-                  ? Padding(
-                      padding: EdgeInsets.only(
-                        top: widget.padding.top,
-                        left: widget.padding.left,
-                        right: widget.padding.right,
-                      ),
-                      child: _getTitleText(),
-                    )
-                  : _emptyWidget,
               Padding(
-                padding: EdgeInsets.only(
-                  top: _messageTopMargin,
-                  left: widget.padding.left,
-                  right: widget.padding.right,
-                  bottom: widget.padding.bottom,
-                ),
-                child: widget.messageText ?? _getDefaultNotificationText(),
+                padding: const EdgeInsets.only(
+                   bottom: 16.0, top: 44.0),
+               child: Row(
+                 mainAxisAlignment: MainAxisAlignment.center,
+                 crossAxisAlignment: CrossAxisAlignment.center,
+                 children: [
+                   _getIcon(),
+                   SizedBox(width: 12,),
+                   _getTitleText(),
+                 ],
+               ),
               ),
+              Container(
+                height: 4,
+                width: 26,
+                margin: EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white30,
+                  borderRadius: BorderRadius.circular(60)
+                ),
+              )
             ],
           ),
         ),
@@ -592,35 +545,38 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
     } else if (widget.icon != null && widget.mainButton == null) {
       return <Widget>[
         _buildLeftBarIndicator(),
-        ConstrainedBox(
-          constraints: BoxConstraints.tightFor(width: 42.0 + iconPadding),
-          child: _getIcon(),
-        ),
+        // ConstrainedBox(
+        //   constraints: BoxConstraints.tightFor(width: 42.0 + iconPadding),
+        //   child: _getIcon(),
+        // ),
         Expanded(
           flex: 1,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              (_isTitlePresent)
-                  ? Padding(
-                      padding: EdgeInsets.only(
-                        top: widget.padding.top,
-                        left: 4.0,
-                        right: widget.padding.left,
-                      ),
-                      child: _getTitleText(),
-                    )
-                  : _emptyWidget,
               Padding(
-                padding: EdgeInsets.only(
-                  top: _messageTopMargin,
-                  left: 4.0,
-                  right: widget.padding.right,
-                  bottom: widget.padding.bottom,
+                padding: const EdgeInsets.only(
+                    bottom: 16.0, top: 44.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _getIcon(),
+                    SizedBox(width: 12,),
+                    _getTitleText(),
+                  ],
                 ),
-                child: widget.messageText ?? _getDefaultNotificationText(),
               ),
+              Container(
+                height: 4,
+                width: 26,
+                margin: EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                    color: Colors.white30,
+                    borderRadius: BorderRadius.circular(60)
+                ),
+              )
             ],
           ),
         ),
@@ -631,28 +587,31 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
         Expanded(
           flex: 1,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              (_isTitlePresent)
-                  ? Padding(
-                      padding: EdgeInsets.only(
-                        top: widget.padding.top,
-                        left: widget.padding.left,
-                        right: widget.padding.right,
-                      ),
-                      child: _getTitleText(),
-                    )
-                  : _emptyWidget,
               Padding(
-                padding: EdgeInsets.only(
-                  top: _messageTopMargin,
-                  left: widget.padding.left,
-                  right: 8.0,
-                  bottom: widget.padding.bottom,
+                padding: const EdgeInsets.only(
+                    bottom: 16.0, top: 44.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _getIcon(),
+                    SizedBox(width: 12,),
+                    _getTitleText(),
+                  ],
                 ),
-                child: widget.messageText ?? _getDefaultNotificationText(),
               ),
+              Container(
+                height: 4,
+                width: 26,
+                margin: EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                    color: Colors.white30,
+                    borderRadius: BorderRadius.circular(60)
+                ),
+              )
             ],
           ),
         ),
@@ -664,35 +623,38 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
     } else {
       return <Widget>[
         _buildLeftBarIndicator(),
-        ConstrainedBox(
-          constraints: BoxConstraints.tightFor(width: 42.0 + iconPadding),
-          child: _getIcon(),
-        ),
+        // ConstrainedBox(
+        //   constraints: BoxConstraints.tightFor(width: 42.0 + iconPadding),
+        //   child: _getIcon(),
+        // ),
         Expanded(
           flex: 1,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              (_isTitlePresent)
-                  ? Padding(
-                      padding: EdgeInsets.only(
-                        top: widget.padding.top,
-                        left: 4.0,
-                        right: 8.0,
-                      ),
-                      child: _getTitleText(),
-                    )
-                  : _emptyWidget,
               Padding(
-                padding: EdgeInsets.only(
-                  top: _messageTopMargin,
-                  left: 4.0,
-                  right: 8.0,
-                  bottom: widget.padding.bottom,
+                padding: const EdgeInsets.only(
+                    bottom: 16.0, top: 44.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _getIcon(),
+                    SizedBox(width: 12,),
+                    _getTitleText(),
+                  ],
                 ),
-                child: widget.messageText ?? _getDefaultNotificationText(),
               ),
+              Container(
+                height: 4,
+                width: 26,
+                margin: EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                    color: Colors.white30,
+                    borderRadius: BorderRadius.circular(60)
+                ),
+              )
             ],
           ),
         ),
@@ -727,37 +689,25 @@ class _FlushbarState<K extends Object?> extends State<Flushbar<K>>
     }
   }
 
-  Widget? _getIcon() {
-    if (widget.icon != null && widget.icon is Icon && widget.shouldIconPulse) {
-      return FadeTransition(
-        opacity: _fadeAnimation,
-        child: widget.icon,
-      );
-    } else if (widget.icon != null) {
-      return widget.icon;
-    } else {
-      return _emptyWidget;
-    }
+  Icon _getIcon() {
+    return widget.icon!!;
   }
 
-  Widget? _getTitleText() {
-    return widget.titleText != null
-        ? widget.titleText
-        : Text(
-            widget.title ?? "",
-            style: TextStyle(
-                fontSize: widget.titleSize ?? 16.0,
-                color: widget.titleColor ?? Colors.white,
-                fontWeight: FontWeight.bold),
-          );
+  Text _getTitleText() {
+    return Text(
+      widget.title!!,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+          fontSize: 23.0,
+          color: Colors.white,
+          fontWeight: FontWeight.w600),
+    );
   }
 
   Text _getDefaultNotificationText() {
     return Text(
-      widget.message ?? "",
-      style: TextStyle(
-          fontSize: widget.messageSize ?? 14.0,
-          color: widget.messageColor ?? Colors.white),
+      "",
+      style: TextStyle(fontSize: 14.0, color: Colors.white),
     );
   }
 
